@@ -2,7 +2,7 @@
 Proyecto Final de Bases de Datos Primavera 2026 COM-12101-001
 
 # Integrantes del Equipo
-DavidFernando Avila Díaz 197851
+David Fernando Avila Díaz 197851
 José Roberto Uribe Clemente 214129
 
 # Data Source
