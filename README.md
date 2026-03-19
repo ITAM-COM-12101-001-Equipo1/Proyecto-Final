@@ -21,7 +21,7 @@ Remuneraciones de **246,820 servidores publicos** de la CDMX (17 atributos, ~45 
 
 | # | Entrega | Documento |
 |---|---------|-----------|
-| E1 | Seleccion del dataset | [`docs/E1_dataset.md`](docs/E1_dataset.md) |
+| E1 | Seleccion del dataset | [`docs/E1_dataset.md`](docs/Entrega1_Remuneraciones_CDMX_v2.pptx) |
 | E2 | Limpieza y carga | *pendiente* |
 | E3 | Normalizacion | *pendiente* |
 | E4 | Analisis | *pendiente* |
