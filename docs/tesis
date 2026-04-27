@@ -1,0 +1,152 @@
+# Tesis del proyecto — documento canónico
+
+> Este documento es la fuente única de verdad para la **tesis central, las preguntas de investigación y su mapeo a entregables E4 y E5**. El README raíz lo enlaza desde §1.
+>
+> Si la tesis cambia, se actualiza aquí primero y el README raíz importa la modificación.
+
+---
+
+## 1. Tesis central
+
+> **La capacidad de retiro digno en México se construye en tres capas desacopladas — el salario que se gana (CDMX como proxy del sector público), el ingreso-gasto que el hogar logra balancear (ENIGH como retrato del hogar mexicano), y el rendimiento que el SAR efectivamente entrega (CONSAR) — cuya brecha de género, suficiencia de ahorro y cobertura efectiva, analizadas en paralelo, revelan asimetrías estructurales en la formación de pensiones que ningún dataset aislado puede mostrar.**
+
+### Las tres capas
+
+```
+┌────────────────────────┐    ┌────────────────────────┐    ┌────────────────────────┐
+│  CAPA 1 — SALARIO      │    │  CAPA 2 — HOGAR        │    │  CAPA 3 — SAR          │
+│  ¿Cuánto se gana?      │    │  ¿Cuánto queda para    │    │  ¿Qué rendimiento real │
+│  ¿Con qué brecha?      │    │  ahorrar?              │    │  entrega el sistema?   │
+│                        │    │                        │    │                        │
+│  Dataset 1             │    │  Dataset 2             │    │  Dataset 3             │
+│  Remuneraciones CDMX   │    │  ENIGH 2024 NS         │    │  CONSAR (SAR)          │
+│  schema ds1            │    │  schema ds2            │    │  schema ds3            │
+└────────────────────────┘    └────────────────────────┘    └────────────────────────┘
+            │                            │                            │
+            └────────────────────────────┴────────────────────────────┘
+                                         │
+                            ┌────────────┴────────────┐
+                            │  CRUCE TRI-CAPA (Q5)    │
+                            │  Cohortes paralelas     │
+                            │  ilustrativas, NO       │
+                            │  individuos enlazados   │
+                            └─────────────────────────┘
+```
+
+### Por qué esta tesis
+
+1. **Conserva el espíritu de la tesis original IAS 19** (suficiencia de retiro, obligaciones de largo plazo) reformulándolo como análisis tri-capa, en lugar de descartarlo.
+2. **Aprovecha los 3 datasets simultáneamente** sin forzar joins inexistentes ni inventar identificadores.
+3. **Admite el desacople temporal e identificatorio** entre fuentes como hallazgo metodológico, no como debilidad.
+4. **Se alinea con los ejes del Premio de Investigación sobre Pensiones 2026** (cobertura, suficiencia, equidad) — sin pretender cumplir su rúbrica formal. Es académico primero, orientado al dominio segundo.
+5. **Cumple la rúbrica académica del curso**: cada pregunta de investigación se traduce 1:1 a una query SQL de E4 y/o un endpoint REST de E5.
+
+---
+
+## 2. Seis preguntas de investigación
+
+Cada pregunta es self-contained: nombra su capa, su dataset principal, las tablas que toca y el resultado esperado.
+
+### Q1 — Brecha salarial en CDMX por sexo, sector, universo y puesto
+
+- **Capa**: Salario.
+- **Dataset**: 1 (Remuneraciones CDMX, schema `ds1`).
+- **Pregunta**: ¿Cuál es la diferencia salarial promedio entre hombres y mujeres en la APCDMX, descompuesta por sector / universo / puesto, y qué universos concentran la mayor desventaja relativa?
+- **Tablas**: `ds1_persona`, `ds1_remuneracion`, catálogos `ds1_sector`, `ds1_universo`, `ds1_puesto`, `ds1_tipo_personal`.
+- **Resultado esperado**: ranking de universos por brecha relativa (`(masc − fem) / masc`); identificación de los 3 universos con mayor desventaja para mujeres.
+- **Origen histórico**: esta era la Tesis Intermedia (§0.2 del README raíz). Se conserva íntegra como una de las seis preguntas de la Tesis Final.
+
+### Q2 — Suficiencia de ahorro en hogares mexicanos por decil
+
+- **Capa**: Hogar.
+- **Dataset**: 2 (ENIGH 2024 NS, schema `ds2`).
+- **Pregunta**: ¿Qué fracción del ingreso del hogar mexicano queda disponible para ahorro de largo plazo después del gasto corriente, descompuesta por decil de ingreso y composición demográfica del hogar?
+- **Tablas**: `ds2_hogar`, `ds2_persona_ingreso`, `ds2_hogar_gasto`, puente `ds2_hogar_acceso_alim`.
+- **Resultado esperado**: tasa de ahorro mediana por decil; identificación del decil mínimo con tasa positiva; correlación con inseguridad alimentaria.
+
+### Q3 — Rendimientos y comisiones del SAR (1997–2025)
+
+- **Capa**: SAR.
+- **Dataset**: 3 (CONSAR, schema `ds3`).
+- **Pregunta**: ¿Cómo evolucionan rendimientos reales y comisiones del SAR por SIEFORE × tipo_recurso × plazo (1997–2025), y qué AFOREs sostienen rendimiento superior a su benchmark a lo largo de ventanas móviles de 12 meses?
+- **Tablas**: `ds3_rendimiento`, `ds3_comision`, `ds3_activo_neto`, catálogos `ds3_cat_afore`, `ds3_cat_siefore`, `ds3_cat_tipo_recurso`, `ds3_cat_plazo`.
+- **Resultado esperado**: serie temporal mensual de rendimiento móvil 12m por AFORE × SIEFORE; AFOREs líderes y rezagadas en rendimiento real ajustado por comisión.
+
+### Q4 — Cobertura del SAR y fricción del sistema
+
+- **Capa**: SAR.
+- **Dataset**: 3.
+- **Pregunta**: ¿Qué cobertura efectiva tiene el SAR — cotizantes activos vs PEA — a lo largo del tiempo, y qué nos dice el flujo de traspasos entre AFOREs sobre la fricción del sistema?
+- **Tablas**: `ds3_pea_cotizantes` (#02), `ds3_cuenta_administrada` (#05 post-pivot), `ds3_traspaso` (#08).
+- **Resultado esperado**: serie anual de cobertura efectiva (cotizantes/PEA); volumen total y direccionalidad de traspasos por año.
+- **Identidad contable usada**: `SUM(num_tras_cedido) = SUM(num_tras_recibido)` por mes a nivel sistema (verificada en `06_verification.sql`).
+
+### Q5 — Proyección tri-capa a 30 años (cohortes ilustrativas)
+
+- **Capas**: Salario + Hogar + SAR (cross-schema).
+- **Datasets**: 1 + 2 + 3.
+- **Pregunta**: Combinando salario CDMX por sexo (Q1), tasa de ahorro mediana del hogar por decil (Q2), y rendimiento real anualizado de la SIEFORE básica (Q3), ¿cuál sería el saldo proyectado a 30 años para cohortes ilustrativas hombre vs mujer?
+- **Tablas**: agregados de `ds1.*`, `ds2.*`, `ds3_rendimiento`.
+- **Resultado esperado**: tabla de saldos proyectados a 30 años por sexo × decil × SIEFORE de referencia.
+- **Restricción metodológica explícita**: **cohortes paralelas, NO individuos enlazados.** No existe identificador común entre los schemas. La proyección es **indicativa, no causal**.
+- **Conexión con la tesis original**: esta es la reformulación del marco IAS 19 / NIF D-3. En lugar de cuantificar pasivos por antigüedad de individuos (imposible sin `fecha_ingreso`), se modela la trayectoria de ahorro de cohortes representativas usando los datos disponibles.
+
+### Q6 — Riesgo regulatorio y volatilidad por SIEFORE
+
+- **Capa**: SAR.
+- **Dataset**: 3.
+- **Pregunta**: ¿Qué SIEFOREs muestran mayor sensibilidad regulatoria (medidas #03) y mayor volatilidad de precios bolsa (#01 / #11), y por tanto representan mayor riesgo para trabajadores próximos al retiro?
+- **Tablas**: `ds3_medida_sensibilidad` (#03 post-pivot), `ds3_precio_bolsa` (#01), `ds3_precio_gestion` (#11).
+- **Resultado esperado**: ranking de SIEFOREs por composite score de riesgo (combinando VaR, error de seguimiento, σ de precio).
+
+---
+
+## 3. Mapeo Pregunta → Query SQL → Endpoint REST
+
+| Pregunta | Query SQL (E4) | Técnica clave | Endpoint REST (E5) |
+|---|---|---|---|
+| Q1 | Q1a — `RANK() OVER` brecha por universo | Window function ranking | `GET /ds1/brecha-salarial?sector=&universo=&sexo=` |
+| Q1 | Q1b — `PERCENTILE_CONT` por sector × sexo | Funciones de percentil | `GET /ds1/ranking-puestos?top=&order=` |
+| Q2 | Q2a — `NTILE(10)` por decil + tasa ahorro | Decilización + agregación | `GET /ds2/tasa-ahorro?decil=&tamano_hogar=` |
+| Q2 | Q2b — Cruce inseguridad alimentaria × ahorro | Joins en bridge tables | `GET /ds2/composicion-gasto?decil=` |
+| Q3 | Q3 — `LAG` + ventana móvil 12m | Window `LAG` + `AVG OVER ROWS` | `GET /ds3/rendimientos?siefore=&desde=&hasta=` |
+| Q3 | (compartido con Q3) | — | `GET /ds3/comisiones-historico?afore=` |
+| Q4 | Q4 — Ratio cotizantes/PEA + flujo traspasos | Window `LAG` + UNION | `GET /ds3/cobertura?anio=` |
+| Q4 | (compartido con Q4) | — | `GET /ds3/traspasos?afore_origen=&afore_destino=` |
+| Q5 | Q5 — Cross-schema (cohortes paralelas) | CTE compuesta sobre 3 schemas | `GET /proyeccion/saldo-30y?sexo=&decil=&siefore=` |
+| Q6 | Q6 — `STDDEV() OVER` ventana móvil | Window `STDDEV` | (incluido en `/ds3/rendimientos` con flag `?incluir_riesgo=true`) |
+| — | — | — | `POST/PUT/DELETE /ds1/persona` (CRUD que pide la rúbrica) |
+
+**Cobertura**: 8 queries SQL, 10 endpoints REST. Cada query toca al menos una técnica avanzada (window function, agregación compleja, joins multi-tabla). Q5 es la única cross-schema y está explícitamente marcada como ilustrativa.
+
+---
+
+## 4. Restricciones metodológicas (resumen)
+
+Detalle completo en §7 del README raíz. Aquí, las cuatro líneas que **siempre** deben aparecer en la presentación final:
+
+1. **No hay PK común entre schemas.** Q5 cruza por agregados (sexo, decil, año), nunca por persona.
+2. **Temporalidades dispares.** CDMX corte único, ENIGH 2024, CONSAR 1997–2025. Q5 ancla en 2024.
+3. **CDMX = proxy del sector público sub-nacional.** No es muestra nacional representativa.
+4. **El proyecto es académico, no actuarial.** Q5 es proyección ilustrativa, no recomendación financiera.
+
+---
+
+## 5. Trayectoria histórica de la tesis
+
+Conservada por trazabilidad académica (la rúbrica del curso premia el rigor del proceso, no solo el resultado).
+
+| Iteración | Pregunta | Datos disponibles que la motivaron / limitaron | Estado actual |
+|---|---|---|---|
+| **§0.1 Original (E1)** | Pasivos por antigüedad bajo IAS 19 / NIF D-3 | Dataset 1 NO tiene `fecha_ingreso` → inviable | Conservada como motivación conceptual de Q5 |
+| **§0.2 Intermedia** | Brecha salarial y composición del gasto en CDMX | Solo Dataset 1 → sub-dimensionada vs alcance del repo | Conservada íntegra como Q1 |
+| **§0.3 Final** | Formación tri-capa de pensiones (la actual) | 3 datasets normalizados a 4FN | Vigente |
+
+---
+
+## 6. Cómo este documento se usa
+
+- **README raíz**: lo enlaza desde §1 como "Mapeo completo pregunta → query → endpoint en `docs/tesis.md`".
+- **Presentación final (30% de la calificación)**: este es el documento citable. La tesis (§1), las 6 preguntas (§2) y la tabla de mapeo (§3) son la columna vertebral del pitch.
+- **Implementación de E4 y E5**: cada SQL en `sql/e4_analisis/` y cada endpoint en `api/` debe nombrar en su comentario inicial qué pregunta de §2 responde.
+- **Cualquier cambio futuro a la tesis**: se actualiza primero aquí, luego se sincroniza el README raíz.
