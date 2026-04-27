@@ -80,7 +80,6 @@ CREATE TABLE nombramientos (
     id_tipo_personal INT NOT NULL REFERENCES cat_tipo_personal(id_tipo_personal),
     id_universo VARCHAR(50) NOT NULL REFERENCES cat_universos(id_universo),
     id_nivel_salarial INT NOT NULL REFERENCES cat_niveles_salariales(id_nivel_salarial),
-    fecha_ingreso DATE,
     edad INT
 );
 
@@ -141,7 +140,6 @@ INSERT INTO nombramientos (
     id_persona, id_puesto, id_tipo_nomina,
     id_tipo_contratacion, id_tipo_personal,
     id_universo, id_nivel_salarial,
-    fecha_ingreso, edad
 )
 SELECT
     p.id_persona,
@@ -151,7 +149,6 @@ SELECT
     tp.id_tipo_personal,
     s.id_universo,
     s.id_nivel_salarial,
-    s.fecha_ingreso,
     s.edad
 FROM staging_remuneraciones s
 JOIN personas p
